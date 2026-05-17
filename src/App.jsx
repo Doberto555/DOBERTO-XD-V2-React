@@ -28,7 +28,138 @@ async function checkCoins(phone) {
     const r = await fetch(`${BOT_URL}/api/coins/${num}`);
     const d = await r.json();
     return d;
-  } catch { return { coins: 0 }; }
+  } catch { return { ok: false, coins: 0 }; }
+}
+
+/* ── COIN DASHBOARD MODAL ── */
+function CoinDashboard({ onClose, onBuy }) {
+  const [phone, setPhone] = useState("");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const check = async () => {
+    const num = phone.replace(/\D/g, "");
+    if (num.length < 8) { setError("Entrez un numéro valide"); return; }
+    setLoading(true); setError(""); setData(null);
+    const res = await checkCoins(num);
+    if (res.ok === false && !res.coins && res.coins !== 0) {
+      setError("Numéro introuvable ou bot hors ligne.");
+    } else {
+      setData(res);
+    }
+    setLoading(false);
+  };
+
+  const coins = data?.coins ?? 0;
+  const sub = data?.subscription;
+  const hasCoins = coins > 0;
+  const hasSub = sub?.active;
+
+  // Couleur barre coins
+  const barColor = coins === 0 ? "#ff5050" : coins <= 3 ? "#FFD166" : "#25D366";
+  const barPct = Math.min((coins / 50) * 100, 100);
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(0,0,0,.85)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#0d1a12",border:"1px solid rgba(37,211,102,.22)",borderRadius:24,padding:"2rem",maxWidth:420,width:"100%",animation:"fadeUp .3s ease"}}>
+
+        <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.3rem",color:"#e8f5e9",marginBottom:4}}>🪙 Mon Solde Coins</div>
+        <p style={{color:"#7a9e8a",fontSize:".85rem",marginBottom:"1.3rem"}}>Entrez votre numéro WhatsApp pour voir votre solde en temps réel.</p>
+
+        {/* Input nimewo */}
+        <div style={{display:"flex",gap:8,marginBottom:"1rem"}}>
+          <input
+            type="tel"
+            placeholder="+509 3700 0000"
+            value={phone}
+            onChange={e=>{setPhone(e.target.value);setData(null);setError("");}}
+            onKeyDown={e=>e.key==="Enter"&&check()}
+            style={{flex:1}}
+          />
+          <button onClick={check} disabled={loading} style={{background:"#25D366",color:"#000",border:"none",borderRadius:10,padding:"0 16px",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".85rem",cursor:loading?"not-allowed":"pointer",flexShrink:0}}>
+            {loading?"...":"Vérifier"}
+          </button>
+        </div>
+
+        {error && <div style={{color:"#ff5050",fontSize:".82rem",marginBottom:"1rem",background:"rgba(255,80,80,.08)",border:"1px solid rgba(255,80,80,.2)",borderRadius:10,padding:"8px 12px"}}>{error}</div>}
+
+        {/* Résultat */}
+        {data && (
+          <div style={{animation:"fadeUp .3s ease"}}>
+
+            {/* Solde coins */}
+            <div style={{background:"rgba(37,211,102,.06)",border:`1.5px solid ${coins===0?"rgba(255,80,80,.3)":coins<=3?"rgba(255,209,102,.3)":"rgba(37,211,102,.3)"}`,borderRadius:16,padding:"1.2rem",marginBottom:"1rem"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div>
+                  <div style={{fontSize:".75rem",color:"#7a9e8a",marginBottom:3}}>Coins disponibles</div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:900,fontSize:"2.4rem",color:barColor,lineHeight:1}}>{coins}</div>
+                  <div style={{fontSize:".75rem",color:"#7a9e8a",marginTop:2}}>{coins} réaction{coins!==1?"s":""} disponible{coins!==1?"s":""}</div>
+                </div>
+                <div style={{fontSize:"2.8rem"}}>{coins===0?"😴":coins<=3?"⚠️":"🪙"}</div>
+              </div>
+
+              {/* Barre progression */}
+              <div style={{background:"rgba(255,255,255,.06)",borderRadius:50,height:8,overflow:"hidden"}}>
+                <div style={{width:`${barPct}%`,height:"100%",background:`linear-gradient(90deg,${barColor},${barColor}aa)`,borderRadius:50,transition:"width .5s ease"}}/>
+              </div>
+
+              {/* Status message */}
+              <div style={{marginTop:10,fontSize:".8rem",color:coins===0?"#ff5050":coins<=3?"#FFD166":"#25D366",fontWeight:600}}>
+                {coins===0
+                  ? "❌ Plus de coins — Rechargez pour continuer les réactions !"
+                  : coins<=3
+                  ? `⚠️ Attention — Plus que ${coins} coin${coins>1?"s":""} restant${coins>1?"s":""}!`
+                  : `✅ Actif — ${coins} réaction${coins>1?"s":""} disponible${coins>1?"s":""}`
+                }
+              </div>
+            </div>
+
+            {/* Abonnement */}
+            {hasSub ? (
+              <div style={{background:"rgba(255,209,102,.06)",border:"1px solid rgba(255,209,102,.25)",borderRadius:14,padding:"1rem",marginBottom:"1rem"}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,color:"#FFD166",fontSize:".88rem",marginBottom:6}}>📅 Abonnement Actif</div>
+                <div style={{fontSize:".82rem",color:"#7a9e8a",lineHeight:1.7}}>
+                  ⚡ {sub.reactionsPerPost} réaction(s) par post<br/>
+                  ⏳ Expire dans <strong style={{color:"#e8f5e9"}}>{sub.daysLeft} jour{sub.daysLeft>1?"s":""}</strong><br/>
+                  📅 Date : {new Date(sub.expiresAt).toLocaleDateString("fr-FR")}
+                </div>
+              </div>
+            ) : sub && !sub.active ? (
+              <div style={{background:"rgba(255,80,80,.06)",border:"1px solid rgba(255,80,80,.2)",borderRadius:14,padding:"1rem",marginBottom:"1rem",fontSize:".82rem",color:"#ff8080"}}>
+                ⏰ Abonnement expiré — Renouvelez pour continuer !
+              </div>
+            ) : null}
+
+            {/* Emojis configurés */}
+            {data.emojis?.length > 0 && (
+              <div style={{marginBottom:"1rem"}}>
+                <div style={{fontSize:".75rem",color:"#7a9e8a",marginBottom:6}}>Emojis configurés :</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {data.emojis.map((e,i)=><span key={i} style={{background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.2)",borderRadius:20,padding:"3px 10px",fontSize:"1rem"}}>{e}</span>)}
+                </div>
+              </div>
+            )}
+
+            {/* Bouton recharge si coins épuisés */}
+            {(coins===0||coins<=3) && (
+              <button onClick={()=>{onClose();onBuy();}} style={{background:"#25D366",color:"#000",border:"none",borderRadius:50,padding:".75rem 0",width:"100%",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",cursor:"pointer",animation:"pulse-ring 2s infinite"}}>
+                🪙 Recharger mes coins maintenant
+              </button>
+            )}
+          </div>
+        )}
+
+        {!data && !loading && (
+          <div style={{textAlign:"center",padding:"1rem 0",color:"#7a9e8a",fontSize:".82rem"}}>
+            Entrez votre numéro et appuyez sur <strong style={{color:"#25D366"}}>Vérifier</strong>
+          </div>
+        )}
+
+        <button onClick={onClose} style={{background:"transparent",border:"1px solid rgba(255,255,255,.1)",color:"#7a9e8a",borderRadius:50,padding:"8px 0",width:"100%",cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:600,fontSize:".82rem",marginTop:"1rem"}}>Fermer</button>
+      </div>
+    </div>
+  );
 }
 
 const EMOJIS = [
@@ -496,6 +627,7 @@ export default function App(){
   const [page,setPage]=useState("home");
   const [regModal,setRegModal]=useState(false);
   const [payModal,setPayModal]=useState(null);
+  const [coinModal,setCoinModal]=useState(false);
   const [scrolled,setScrolled]=useState(false);
   const [activeEmoji,setActiveEmoji]=useState(null);
   const [botOnline,setBotOnline]=useState(null); // null=ap verifye, true=online, false=offline
@@ -541,6 +673,11 @@ export default function App(){
           {/* Tarifs */}
           <button onClick={()=>setPage(page==="pricing"?"home":"pricing")} style={{background:"transparent",border:"1px solid rgba(37,211,102,.25)",color:"#e8f5e9",borderRadius:50,padding:".38rem .85rem",cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",whiteSpace:"nowrap",transition:"all .2s"}}>
             {page==="pricing"?"← Accueil":"Tarifs"}
+          </button>
+
+          {/* Mon Solde */}
+          <button onClick={()=>setCoinModal(true)} style={{background:"rgba(255,209,102,.12)",border:"1px solid rgba(255,209,102,.3)",color:"#FFD166",borderRadius:50,padding:".38rem .85rem",cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",whiteSpace:"nowrap"}}>
+            🪙 Solde
           </button>
 
           {/* Démarrer */}
@@ -684,6 +821,7 @@ export default function App(){
 
       {regModal&&<RegisterModal onClose={()=>setRegModal(false)}/>}
       {payModal&&<PayModal item={payModal} onClose={()=>setPayModal(null)}/>}
+      {coinModal&&<CoinDashboard onClose={()=>setCoinModal(false)} onBuy={()=>setPage("pricing")}/>}
     </>
   );
 }
