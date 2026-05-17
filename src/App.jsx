@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 
 // ── URL BOT RAILWAY ──
-const BOT_URL = "https://doberto-xd.mooo.com";
+const BOT_URL = "https://doberto-xd.mooo.com:2000";
 
 // ── API HELPERS ──
 async function checkBotStatus() {
   try {
-    const r = await fetch(`${BOT_URL}/ping`);
-    const d = await r.json();
-    return d?.status === "active";
+    const r = await fetch(`${BOT_URL}/dashboard`, { method: "GET" });
+    return r.ok || r.status === 200 || r.status === 304;
   } catch { return false; }
 }
 
