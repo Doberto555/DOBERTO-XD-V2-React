@@ -480,22 +480,32 @@ export default function App(){
       <Particles/>
 
       {/* NAV */}
-      <nav style={{position:"sticky",top:0,zIndex:100,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 1.5rem",height:56,background:scrolled?"rgba(6,14,9,.92)":"transparent",backdropFilter:scrolled?"blur(16px)":"none",borderBottom:scrolled?"1px solid rgba(37,211,102,.12)":"1px solid transparent",transition:"all .3s"}}>
-        <button onClick={()=>setPage("home")} style={{fontFamily:"'Syne',sans-serif",fontWeight:900,fontSize:"1.3rem",color:"#25D366",display:"flex",alignItems:"center",gap:8,background:"none",border:"none",cursor:"pointer"}}>
+      <nav style={{position:"sticky",top:0,zIndex:100,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 1rem",height:52,background:scrolled?"rgba(6,14,9,.95)":"rgba(6,14,9,.7)",backdropFilter:"blur(16px)",borderBottom:"1px solid rgba(37,211,102,.1)",transition:"all .3s",gap:8}}>
+
+        {/* LOGO — yon sèl liy */}
+        <button onClick={()=>setPage("home")} style={{fontFamily:"'Syne',sans-serif",fontWeight:900,fontSize:"1.1rem",color:"#25D366",display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
           ⚡ Doberto XD
         </button>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          {/* Bot Status Indicator */}
-          <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(0,0,0,.3)",border:`1px solid ${botOnline===true?"rgba(37,211,102,.4)":botOnline===false?"rgba(255,80,80,.4)":"rgba(255,200,0,.4)"}`,borderRadius:50,padding:".3rem .8rem",fontSize:".72rem"}}>
-            <div style={{width:7,height:7,borderRadius:"50%",background:botOnline===true?"#25D366":botOnline===false?"#ff5050":"#FFD166",animation:botOnline===true?"pulse-ring 2s infinite":"none"}}/>
-            <span style={{color:botOnline===true?"#25D366":botOnline===false?"#ff5050":"#FFD166",fontFamily:"'Syne',sans-serif",fontWeight:700}}>
-              {botOnline===null?"Vérification...":botOnline?"Bot Actif":"Bot Hors ligne"}
+
+        {/* DWAT — status + bouton yo */}
+        <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+
+          {/* Status — ti pwen sèlman sou mobil */}
+          <div title={botOnline===null?"Vérification...":botOnline?"Bot Actif":"Bot Hors ligne"} style={{display:"flex",alignItems:"center",gap:4,background:"rgba(0,0,0,.4)",border:`1px solid ${botOnline===true?"rgba(37,211,102,.4)":botOnline===false?"rgba(255,80,80,.4)":"rgba(255,200,0,.4)"}`,borderRadius:50,padding:"4px 8px",cursor:"default"}}>
+            <div style={{width:7,height:7,borderRadius:"50%",flexShrink:0,background:botOnline===true?"#25D366":botOnline===false?"#ff5050":"#FFD166",animation:botOnline===true?"pulse-ring 2s infinite":"none"}}/>
+            {/* Tèks — kache sou ti ekran */}
+            <span style={{color:botOnline===true?"#25D366":botOnline===false?"#ff5050":"#FFD166",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".68rem",display:"block"}}>
+              {botOnline===null?"...":botOnline?"Actif":"Off"}
             </span>
           </div>
-          <button onClick={()=>setPage(page==="pricing"?"home":"pricing")} style={{background:"transparent",border:"1px solid rgba(37,211,102,.25)",color:"#e8f5e9",borderRadius:50,padding:".45rem 1rem",cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",transition:"all .2s"}}>
-            {page==="pricing"?"← Accueil":"💰 Tarifs"}
+
+          {/* Tarifs */}
+          <button onClick={()=>setPage(page==="pricing"?"home":"pricing")} style={{background:"transparent",border:"1px solid rgba(37,211,102,.25)",color:"#e8f5e9",borderRadius:50,padding:".38rem .85rem",cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",whiteSpace:"nowrap",transition:"all .2s"}}>
+            {page==="pricing"?"← Accueil":"Tarifs"}
           </button>
-          <button onClick={()=>setRegModal(true)} style={{background:"#25D366",color:"#000",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".85rem",padding:".5rem 1.2rem",borderRadius:50,border:"none",cursor:"pointer",animation:"pulse-ring 2.5s infinite"}}>
+
+          {/* Démarrer */}
+          <button onClick={()=>setRegModal(true)} style={{background:"#25D366",color:"#000",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".8rem",padding:".4rem 1rem",borderRadius:50,border:"none",cursor:"pointer",whiteSpace:"nowrap",animation:"pulse-ring 2.5s infinite"}}>
             Démarrer
           </button>
         </div>
