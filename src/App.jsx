@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
 
-// ── URL BOT RAILWAY ──
-const BOT_URL = "https://doberto-xd.mooo.com:2000";
+// ── Proxy Vercel — evite CORS nèt ──
+// Vercel redirijè /api/* → https://doberto-xd.mooo.com/*
+const BOT_URL = "/api";
 
 // ── API HELPERS ──
 async function checkBotStatus() {
   try {
-    const r = await fetch(`${BOT_URL}/ping`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const r = await fetch(`${BOT_URL}/ping`, {
+      signal: controller.signal,
+      cache: "no-cache",
+    });
+    clearTimeout(timeout);
+    if (!r.ok) return false;
     const d = await r.json();
     return d?.status === "active";
   } catch { return false; }
@@ -16,7 +24,6 @@ async function registerUser(name, phone, chainLink) {
   const num = phone.replace(/\D/g,'');
 
   // Ekstrè JID newsletter soti nan link lan
-  // https://whatsapp.com/channel/0029VbCdBgw17EmtjDmLxU3V → 0029VbCdBgw17EmtjDmLxU3V@newsletter
   let channelCode = "";
   if (chainLink.includes("whatsapp.com/channel/")) {
     channelCode = chainLink.split("whatsapp.com/channel/")[1].replace(/\//g,"").trim();
