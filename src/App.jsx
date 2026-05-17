@@ -6,8 +6,9 @@ const BOT_URL = "https://doberto-xd.mooo.com:2000";
 // ── API HELPERS ──
 async function checkBotStatus() {
   try {
-    const r = await fetch(`${BOT_URL}/dashboard`, { method: "GET" });
-    return r.ok || r.status === 200 || r.status === 304;
+    const r = await fetch(`${BOT_URL}/ping`);
+    const d = await r.json();
+    return d?.status === "active";
   } catch { return false; }
 }
 
