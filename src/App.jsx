@@ -64,18 +64,57 @@ const PAYMENT_METHODS = [
 const GBL = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:#060e09;font-family:'DM Sans',sans-serif;}
+  html{font-size:16px;}
+  body{background:#060e09;font-family:'DM Sans',sans-serif;overflow-x:hidden;-webkit-text-size-adjust:100%;}
+
+  /* ── Animations ── */
   @keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
   @keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
-  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
-  @keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,.5)}50%{box-shadow:0 0 0 14px rgba(37,211,102,0)}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  @keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,.5)}50%{box-shadow:0 0 0 12px rgba(37,211,102,0)}}
   @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-  @keyframes rise{from{transform:translateY(0) rotate(0deg);opacity:.07}50%{opacity:.12}to{transform:translateY(-120vh) rotate(360deg);opacity:0}}
+  @keyframes rise{from{transform:translateY(0) rotate(0deg);opacity:.07}50%{opacity:.1}to{transform:translateY(-120vh) rotate(360deg);opacity:0}}
+
+  /* ── Cards hover ── */
   .ch{transition:transform .3s,border-color .3s,box-shadow .3s!important;}
-  .ch:hover{transform:translateY(-8px)!important;border-color:rgba(37,211,102,.5)!important;box-shadow:0 20px 50px rgba(37,211,102,.12)!important;}
-  input,select{background:#132018;border:1px solid rgba(37,211,102,.2);border-radius:10px;padding:10px 14px;color:#e8f5e9;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;width:100%;transition:border-color .2s;}
+  .ch:hover{transform:translateY(-6px)!important;border-color:rgba(37,211,102,.5)!important;box-shadow:0 16px 40px rgba(37,211,102,.1)!important;}
+
+  /* ── Inputs ── */
+  input,select{
+    background:#132018;
+    border:1px solid rgba(37,211,102,.2);
+    border-radius:10px;
+    padding:10px 14px;
+    color:#e8f5e9;
+    font-family:'DM Sans',sans-serif;
+    font-size:16px;
+    outline:none;
+    width:100%;
+    transition:border-color .2s;
+    -webkit-appearance:none;
+    appearance:none;
+  }
   input:focus,select:focus{border-color:#25D366;}
   input::placeholder{color:#7a9e8a;}
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:#060e09;}
+  ::-webkit-scrollbar-thumb{background:#25D366;border-radius:4px;}
+
+  /* ── Responsive sections ── */
+  section{padding-left:max(1rem,4vw);padding-right:max(1rem,4vw);}
+
+  /* ── Prevent text overflow ── */
+  p,h1,h2,h3,h4,div{word-break:break-word;overflow-wrap:break-word;}
+
+  /* ── Buttons tap highlight ── */
+  button{-webkit-tap-highlight-color:transparent;}
+
+  /* ── Mobile small screens (<360px) ── */
+  @media(max-width:360px){
+    html{font-size:14px;}
+  }
 `;
 
 /* ── PARTICLES ── */
@@ -516,27 +555,36 @@ export default function App(){
         :(
         <>
           {/* HERO */}
-          <section style={{position:"relative",zIndex:1,textAlign:"center",padding:"6rem 1.5rem 3rem",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-            <div style={{position:"absolute",top:"20%",left:"50%",transform:"translateX(-50%)",width:600,height:400,background:"radial-gradient(ellipse,rgba(37,211,102,.1) 0%,transparent 70%)",pointerEvents:"none"}}/>
-            <div style={{animation:"fadeUp .6s ease both",background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.25)",borderRadius:50,padding:".35rem 1.1rem",display:"inline-flex",alignItems:"center",gap:6,fontSize:".78rem",color:"#25D366",marginBottom:"1.5rem"}}>
-              ⚡ Bot Auto-Réaction WhatsApp — par DOBERTO MR LIT
+          <section style={{position:"relative",zIndex:1,textAlign:"center",padding:"5rem 1.2rem 3rem",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{position:"absolute",top:"20%",left:"50%",transform:"translateX(-50%)",width:"min(600px,100%)",height:400,background:"radial-gradient(ellipse,rgba(37,211,102,.1) 0%,transparent 70%)",pointerEvents:"none"}}/>
+
+            {/* Badge — raccourci, yon sèl liy */}
+            <div style={{animation:"fadeUp .6s ease both",background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.25)",borderRadius:50,padding:".3rem .9rem",display:"inline-flex",alignItems:"center",gap:5,fontSize:".72rem",color:"#25D366",marginBottom:"1.2rem",whiteSpace:"nowrap",maxWidth:"90vw",overflow:"hidden",textOverflow:"ellipsis"}}>
+              ⚡ Auto-Réaction WhatsApp — DOBERTO MR LIT
             </div>
-            <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:900,fontSize:"clamp(2.4rem,7vw,5rem)",lineHeight:1.05,animation:"fadeUp .7s .1s ease both",color:"#e8f5e9",maxWidth:800,margin:"0 auto .5rem"}}>
+
+            {/* Titre — adapte selon ecran */}
+            <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:900,fontSize:"clamp(1.9rem,8vw,4.5rem)",lineHeight:1.1,animation:"fadeUp .7s .1s ease both",color:"#e8f5e9",maxWidth:"min(800px,92vw)",margin:"0 auto .5rem"}}>
               Réactions{" "}
-              <span style={{background:"linear-gradient(90deg,#25D366,#7bed9f,#25D366)",backgroundSize:"200% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 3s linear infinite"}}>Automatiques</span>
+              <span style={{background:"linear-gradient(90deg,#25D366,#7bed9f,#25D366)",backgroundSize:"200% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 3s linear infinite"}}>Auto</span>
               {" "}sur WhatsApp
             </h1>
-            <p style={{animation:"fadeUp .7s .2s ease both",maxWidth:540,margin:"1.5rem auto 2.5rem",color:"#7a9e8a",fontSize:"1.05rem",lineHeight:1.75}}>
-              Le bot de <strong style={{color:"#25D366"}}>DOBERTO MR LIT</strong> réagit automatiquement sous chaque post de votre chaîne. Commencez avec <strong style={{color:"#FFD166"}}>10 coins offerts</strong> !
+
+            {/* Sous-titre */}
+            <p style={{animation:"fadeUp .7s .2s ease both",maxWidth:"min(520px,88vw)",margin:"1.2rem auto 2rem",color:"#7a9e8a",fontSize:"clamp(.88rem,3.5vw,1rem)",lineHeight:1.7}}>
+              Le bot de <strong style={{color:"#25D366"}}>DOBERTO MR LIT</strong> réagit automatiquement sous chaque post de votre chaîne. <strong style={{color:"#FFD166"}}>10 coins offerts</strong> à l'inscription !
             </p>
-            <div style={{animation:"fadeUp .7s .3s ease both",display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:"4rem"}}>
-              <button onClick={()=>setRegModal(true)} style={{background:"#25D366",color:"#000",fontFamily:"'Syne',sans-serif",fontWeight:700,padding:".9rem 2rem",borderRadius:50,border:"none",cursor:"pointer",fontSize:"1rem",display:"flex",alignItems:"center",gap:8}}>
+
+            {/* Boutons — stack sou mobil */}
+            <div style={{animation:"fadeUp .7s .3s ease both",display:"flex",flexDirection:"column",alignItems:"center",gap:10,marginBottom:"3rem",width:"100%",maxWidth:320}}>
+              <button onClick={()=>setRegModal(true)} style={{background:"#25D366",color:"#000",fontFamily:"'Syne',sans-serif",fontWeight:700,padding:".85rem 0",borderRadius:50,border:"none",cursor:"pointer",fontSize:"clamp(.88rem,4vw,.98rem)",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                 🚀 Démarrer — 10 Coins Gratuits
               </button>
-              <button onClick={()=>setPage("pricing")} style={{background:"transparent",border:"1.5px solid rgba(37,211,102,.25)",color:"#e8f5e9",fontFamily:"'Syne',sans-serif",fontWeight:600,padding:".9rem 1.8rem",borderRadius:50,cursor:"pointer",fontSize:"1rem"}}>
+              <button onClick={()=>setPage("pricing")} style={{background:"transparent",border:"1.5px solid rgba(37,211,102,.25)",color:"#e8f5e9",fontFamily:"'Syne',sans-serif",fontWeight:600,padding:".75rem 0",borderRadius:50,cursor:"pointer",fontSize:"clamp(.85rem,3.5vw,.95rem)",width:"100%"}}>
                 💰 Voir les tarifs
               </button>
             </div>
+
             <div style={{animation:"float 5s ease-in-out infinite",position:"relative",zIndex:1,width:"100%",display:"flex",justifyContent:"center"}}>
               <PhoneMockup/>
             </div>
@@ -597,10 +645,41 @@ export default function App(){
       )}
 
       {/* FOOTER */}
-      <footer style={{borderTop:"1px solid rgba(37,211,102,.1)",textAlign:"center",padding:"2rem 1rem",color:"#7a9e8a",fontSize:".8rem",position:"relative",zIndex:1}}>
-        <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,color:"#25D366",fontSize:"1.1rem",marginBottom:8}}>⚡ Doberto XD</div>
-        <p>© 2026 Doberto XD — Développé avec ❤️ par <strong style={{color:"#25D366"}}>DOBERTO MR LIT</strong></p>
-        <p style={{marginTop:6}}>Paiements : 🔴 MonCash · 🔵 NatCash · 🟡 Binance · <a href="#" style={{color:"#25D366",textDecoration:"none"}}>Nous contacter</a></p>
+      <footer style={{borderTop:"1px solid rgba(37,211,102,.1)",padding:"2.5rem 1.2rem 2rem",position:"relative",zIndex:1}}>
+
+        {/* Contact cards */}
+        <div style={{maxWidth:500,margin:"0 auto 2rem",display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {[
+            {num:"50935878442",label:"WhatsApp 1"},
+            {num:"50939492644",label:"WhatsApp 2"},
+          ].map(c=>(
+            <a key={c.num} href={`https://wa.me/${c.num}`} target="_blank" rel="noreferrer"
+              style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.2)",borderRadius:16,padding:"1rem",textDecoration:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:6,transition:"all .2s"}}>
+              <span style={{fontSize:"1.6rem"}}>💬</span>
+              <span style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",color:"#25D366"}}>{c.label}</span>
+              <span style={{fontSize:".75rem",color:"#7a9e8a",letterSpacing:".03em"}}>+{c.num}</span>
+              <span style={{background:"#25D366",color:"#000",borderRadius:50,padding:"3px 12px",fontSize:".7rem",fontFamily:"'Syne',sans-serif",fontWeight:700,marginTop:2}}>Contacter</span>
+            </a>
+          ))}
+        </div>
+
+        {/* Pèman */}
+        <div style={{textAlign:"center",marginBottom:"1.5rem"}}>
+          <div style={{fontSize:".72rem",color:"#7a9e8a",marginBottom:8,letterSpacing:".08em",textTransform:"uppercase"}}>Modes de paiement</div>
+          <div style={{display:"flex",justifyContent:"center",gap:10,flexWrap:"wrap"}}>
+            {[{i:"🔴",l:"MonCash"},{i:"🔵",l:"NatCash"},{i:"🟡",l:"Binance"}].map(p=>(
+              <div key={p.l} style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:50,padding:"4px 14px",fontSize:".78rem",color:"#7a9e8a",display:"flex",alignItems:"center",gap:5}}>
+                {p.i} {p.l}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div style={{textAlign:"center",borderTop:"1px solid rgba(255,255,255,.05)",paddingTop:"1.2rem"}}>
+          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,color:"#25D366",fontSize:"1rem",marginBottom:6}}>⚡ Doberto XD</div>
+          <p style={{color:"#7a9e8a",fontSize:".75rem"}}>© 2026 — Développé par <strong style={{color:"#25D366"}}>DOBERTO MR LIT</strong></p>
+        </div>
       </footer>
 
       {regModal&&<RegisterModal onClose={()=>setRegModal(false)}/>}
