@@ -221,9 +221,9 @@ const SUB_PLANS = [
 const REACTION_COUNTS = ["1 réaction","2 réactions","3 réactions","5 réactions"];
 
 const PAYMENT_METHODS = [
-  {id:"moncash",label:"MonCash", icon:"🔴",info:"Numéro MonCash : +509 3700-0000"},
-  {id:"natcash",label:"NatCash", icon:"🔵",info:"Numéro NatCash : +509 3600-0000"},
-  {id:"binance",label:"Binance", icon:"🟡",info:"Adresse USDT (TRC20) : TXxxx...xxxx"},
+  {id:"moncash",label:"MonCash", icon:"🔴", num:"50944741828", info:"Envoyer au : +509 4474-1828"},
+  {id:"natcash",label:"NatCash", icon:"🔵", num:"50935878442", info:"Envoyer au : +509 3587-8442"},
+  {id:"binance",label:"Binance", icon:"🟡", num:"binance",     info:"Binance ID : 1228940651"},
 ];
 
 const GBL = `
@@ -329,46 +329,112 @@ function PhoneMockup(){
 /* ── PAYMENT MODAL ── */
 function PayModal({item,onClose}){
   const [method,setMethod]=useState(null);
-  const [step,setStep]=useState("choose");
-  const [txid,setTxid]=useState("");
+  const [step,setStep]=useState("choose"); // choose | info | confirm | done
+  const [form,setForm]=useState({phone:"",txid:""});
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState("");
   const pm=PAYMENT_METHODS.find(p=>p.id===method);
 
-  return(
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(0,0,0,.85)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#0d1a12",border:"1px solid rgba(37,211,102,.22)",borderRadius:24,padding:"2rem",maxWidth:460,width:"100%",animation:"fadeUp .3s ease",boxShadow:"0 0 60px rgba(37,211,102,.1)"}}>
+  const submitConfirm=async()=>{
+    if(!form.phone.trim()||!form.txid.trim()){
+      setError("Remplissez tous les champs 🙏");return;
+    }
+    setLoading(true);setError("");
+    try{
+      // Notifie admin sou WhatsApp via bot la
+      await fetch(`${BOT_URL}/api/notify-admin`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          adminNumber:"50935878442",
+          message:`🔔 *Nouveau Paiement à Vérifier*\n\n👤 Numéro client : *${form.phone}*\n💳 Méthode : *${pm?.label}*\n🧾 Référence : *${form.txid}*\n📦 Commande : *${item.label}*\n💰 Montant : *$${item.price} USD*\n\n✅ Pour confirmer, ajoutez les coins :\n${BOT_URL}/api/coins/add`,
+        })
+      });
+    }catch(e){/* silencieux */}
+    setStep("done");
+    setLoading(false);
+  };
 
+  return(
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(0,0,0,.85)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#0d1a12",border:"1px solid rgba(37,211,102,.22)",borderRadius:24,padding:"2rem",maxWidth:460,width:"100%",animation:"fadeUp .3s ease",boxShadow:"0 0 60px rgba(37,211,102,.1)",margin:"auto"}}>
+
+        {/* DONE */}
         {step==="done"?(
           <div style={{textAlign:"center",padding:"1rem 0"}}>
-            <div style={{fontSize:"3rem",marginBottom:8}}>✅</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.3rem",color:"#e8f5e9",marginBottom:8}}>Paiement en vérification</div>
-            <p style={{color:"#7a9e8a",fontSize:".88rem",lineHeight:1.6,marginBottom:"1.5rem"}}>Notre équipe vérifiera votre paiement et activera votre accès sous <strong style={{color:"#25D366"}}>15 minutes</strong>.</p>
-            <div style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.2)",borderRadius:12,padding:12,marginBottom:"1.5rem",fontFamily:"'Syne',sans-serif",fontSize:".82rem",color:"#25D366"}}>Réf : {txid}</div>
+            <div style={{fontSize:"3rem",marginBottom:8}}>⏳</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.3rem",color:"#e8f5e9",marginBottom:8}}>Confirmation envoyée !</div>
+            <p style={{color:"#7a9e8a",fontSize:".88rem",lineHeight:1.6,marginBottom:"1.5rem"}}>
+              Notre équipe a reçu votre confirmation. Vos coins seront activés sous <strong style={{color:"#25D366"}}>15 minutes</strong>.
+            </p>
+            <div style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.2)",borderRadius:12,padding:12,marginBottom:"1.5rem",fontSize:".82rem",lineHeight:1.7}}>
+              <div style={{color:"#7a9e8a",marginBottom:4}}>Récapitulatif</div>
+              <div style={{color:"#e8f5e9"}}>📱 {form.phone}</div>
+              <div style={{color:"#25D366"}}>🧾 Réf : {form.txid}</div>
+              <div style={{color:"#FFD166"}}>📦 {item.label} — ${item.price} USD</div>
+            </div>
+            <p style={{color:"#7a9e8a",fontSize:".8rem",marginBottom:"1.5rem"}}>
+              💬 Vous pouvez aussi contacter directement :<br/>
+              <a href="https://wa.me/50935878442" style={{color:"#25D366"}}>+509 3587-8442</a>
+            </p>
             <button onClick={onClose} style={{background:"#25D366",color:"#000",border:"none",padding:"10px 28px",borderRadius:50,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700}}>Fermer</button>
           </div>
 
+        /* INFO + CONFIRM */
         ):step==="info"&&pm?(
           <>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"#e8f5e9",marginBottom:4}}>Paiement via {pm.label} {pm.icon}</div>
-            <div style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.2)",borderRadius:12,padding:14,marginBottom:"1.2rem"}}>
-              <div style={{fontSize:".8rem",color:"#7a9e8a",marginBottom:4}}>Montant à envoyer</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"#e8f5e9",marginBottom:4}}>
+              Paiement via {pm.label} {pm.icon}
+            </div>
+
+            {/* Montant */}
+            <div style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.2)",borderRadius:12,padding:14,marginBottom:"1rem"}}>
+              <div style={{fontSize:".78rem",color:"#7a9e8a",marginBottom:4}}>Montant à envoyer</div>
               <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"#25D366"}}>${item.price} USD</div>
               <div style={{fontSize:".75rem",color:"#7a9e8a",marginTop:4}}>{item.label}</div>
             </div>
-            <div style={{background:"rgba(255,209,102,.06)",border:"1px solid rgba(255,209,102,.2)",borderRadius:12,padding:12,marginBottom:"1.2rem",fontSize:".85rem",color:"#FFD166",lineHeight:1.6}}>
-              📋 <strong>{pm.info}</strong>
+
+            {/* Numéro/adresse pou peye */}
+            <div style={{background:"rgba(255,209,102,.06)",border:"1px solid rgba(255,209,102,.25)",borderRadius:12,padding:12,marginBottom:"1rem"}}>
+              <div style={{fontSize:".75rem",color:"#FFD166",fontWeight:700,marginBottom:4}}>📋 Envoyer à :</div>
+              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"#e8f5e9"}}>{pm.info.replace("Envoyer au : ","")}</div>
+              <div style={{fontSize:".75rem",color:"#7a9e8a",marginTop:4}}>Copiez ce numéro dans {pm.label}</div>
             </div>
-            <p style={{color:"#7a9e8a",fontSize:".82rem",marginBottom:"1rem",lineHeight:1.6}}>Collez votre <strong style={{color:"#e8f5e9"}}>numéro de transaction / référence</strong> ci-dessous :</p>
-            <input value={txid} onChange={e=>setTxid(e.target.value)} placeholder="Ex: MC-123456789 ou hash Binance..." style={{marginBottom:"1.2rem"}}/>
+
+            {/* Fòm konfimasyon */}
+            <div style={{background:"rgba(37,211,102,.04)",border:"1px solid rgba(37,211,102,.12)",borderRadius:14,padding:"1rem",marginBottom:"1rem"}}>
+              <div style={{fontSize:".78rem",color:"#25D366",fontWeight:700,marginBottom:10}}>✅ Après paiement, remplissez ci-dessous :</div>
+
+              <div style={{marginBottom:"0.8rem"}}>
+                <label style={{display:"block",fontSize:".75rem",color:"#7a9e8a",marginBottom:5}}>Votre numéro WhatsApp</label>
+                <input type="tel" placeholder="+509 3700 0000" value={form.phone}
+                  onChange={e=>setForm(p=>({...p,phone:e.target.value}))}/>
+              </div>
+
+              <div>
+                <label style={{display:"block",fontSize:".75rem",color:"#7a9e8a",marginBottom:5}}>Référence / numéro de transaction</label>
+                <input type="text" placeholder="Ex: MC-123456789 ou hash Binance..."
+                  value={form.txid} onChange={e=>setForm(p=>({...p,txid:e.target.value}))}/>
+              </div>
+            </div>
+
+            {error&&<div style={{color:"#ff5050",fontSize:".8rem",marginBottom:"0.8rem",background:"rgba(255,80,80,.08)",border:"1px solid rgba(255,80,80,.2)",borderRadius:10,padding:"8px 12px"}}>{error}</div>}
+
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <button onClick={()=>setStep("choose")} style={{background:"transparent",border:"1px solid rgba(255,255,255,.12)",color:"#7a9e8a",padding:"8px 18px",borderRadius:50,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:600,fontSize:".85rem"}}>← Retour</button>
-              <button onClick={()=>{if(!txid.trim()){alert("Veuillez entrer votre référence 🙏");return;}setStep("done");}} style={{background:"#25D366",color:"#000",border:"none",padding:"8px 20px",borderRadius:50,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem"}}>Confirmer ✅</button>
+              <button onClick={submitConfirm} disabled={loading} style={{background:loading?"#1a5c38":"#25D366",color:"#000",border:"none",padding:"8px 20px",borderRadius:50,cursor:loading?"not-allowed":"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem"}}>
+                {loading?"Envoi...":"Confirmer ✅"}
+              </button>
             </div>
           </>
 
+        /* CHOOSE METHOD */
         ):(
           <>
             <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"#e8f5e9",marginBottom:4}}>Mode de paiement</div>
-            <div style={{color:"#7a9e8a",fontSize:".85rem",marginBottom:"1.2rem"}}>Pour : <strong style={{color:"#25D366"}}>{item.label}</strong> — <strong style={{color:"#FFD166"}}>${item.price} USD</strong></div>
+            <div style={{color:"#7a9e8a",fontSize:".85rem",marginBottom:"1.2rem"}}>
+              Pour : <strong style={{color:"#25D366"}}>{item.label}</strong> — <strong style={{color:"#FFD166"}}>${item.price} USD</strong>
+            </div>
             <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:"1.5rem"}}>
               {PAYMENT_METHODS.map(p=>(
                 <button key={p.id} onClick={()=>{setMethod(p.id);setStep("info");}} style={{background:"#132018",border:"1.5px solid rgba(37,211,102,.15)",borderRadius:14,padding:"14px 18px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"all .2s",textAlign:"left"}}>
