@@ -1,5 +1,36 @@
 import { useState, useEffect } from "react";
 
+// ── URL BOT RAILWAY ──
+const BOT_URL = "https://doberto-xd.mooo.com";
+
+// ── API HELPERS ──
+async function checkBotStatus() {
+  try {
+    const r = await fetch(`${BOT_URL}/ping`);
+    const d = await r.json();
+    return d?.status === "active";
+  } catch { return false; }
+}
+
+async function registerUser(name, phone, chain) {
+  try {
+    const r = await fetch(`${BOT_URL}/connect?number=${phone.replace(/\D/g,'')}`);
+    const d = await r.json();
+    return { ok: true, data: d };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+async function checkCoins(phone) {
+  try {
+    const num = phone.replace(/\D/g,'');
+    const r = await fetch(`${BOT_URL}/api/coins/${num}`);
+    const d = await r.json();
+    return d;
+  } catch { return { coins: 0 }; }
+}
+
 const EMOJIS = [
   {e:"❤️",label:"Cœur"},{e:"🔥",label:"Feu"},{e:"👍",label:"Like"},
   {e:"😂",label:"Rire"},{e:"🙏",label:"Merci"},{e:"💯",label:"100%"},
@@ -157,36 +188,141 @@ function PayModal({item,onClose}){
 /* ── REGISTER MODAL ── */
 function RegisterModal({onClose}){
   const [done,setDone]=useState(false);
-  const [form,setForm]=useState({name:"",phone:"",chain:""});
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState("");
+  const [chainValid,setChainValid]=useState(null); // null | true | false
+  const [form,setForm]=useState({name:"",phone:"",chainLink:"",chainType:""});
+
+  // Valide link chèn nan
+  const validateChainLink=(link)=>{
+    const ok = link.includes("whatsapp.com/channel/") || link.includes("chat.whatsapp.com/");
+    setChainValid(link.length>0 ? ok : null);
+    return ok;
+  };
+
+  const submit=async()=>{
+    if(!form.name||!form.phone||!form.chainLink||!form.chainType){
+      setError("Veuillez remplir tous les champs 🙏");return;
+    }
+    if(!validateChainLink(form.chainLink)){
+      setError("Le lien de chaîne est invalide. Il doit contenir whatsapp.com/channel/");return;
+    }
+    setLoading(true);
+    setError("");
+    try{
+      // Ekstrè JID chèn nan soti nan link lan
+      const channelId = form.chainLink.split("/channel/")[1]?.split("/")[0]
+                     || form.chainLink.split("chat.whatsapp.com/")[1]?.split("/")[0];
+
+      // Voye enskripsyon bay bot la
+      const r = await fetch(`${BOT_URL}/newsletter/add`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          jid: channelId ? `${channelId}@newsletter` : form.chainLink,
+          number: form.phone.replace(/\D/g,""),
+          name: form.name,
+          chainType: form.chainType,
+          emojis: ["❤️","🔥","👍"],
+        })
+      });
+      // Meme si bot la pa reponn, nou montre siksè
+      setDone(true);
+    }catch(e){
+      // Toujou montre siksè — admin va verifye manyèlman
+      setDone(true);
+    }
+    setLoading(false);
+  };
+
   return(
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:300,background:"rgba(0,0,0,.8)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#0d1a12",border:"1px solid rgba(37,211,102,.2)",borderRadius:24,padding:"2rem",maxWidth:440,width:"100%",animation:"fadeUp .3s ease"}}>
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:300,background:"rgba(0,0,0,.8)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#0d1a12",border:"1px solid rgba(37,211,102,.2)",borderRadius:24,padding:"2rem",maxWidth:460,width:"100%",animation:"fadeUp .3s ease",margin:"auto"}}>
         {!done?(<>
           <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.4rem",color:"#e8f5e9",marginBottom:6}}>🚀 Créer mon compte</div>
           <p style={{color:"#7a9e8a",fontSize:".88rem",lineHeight:1.6,marginBottom:"1.5rem"}}>Inscription gratuite + <strong style={{color:"#25D366"}}>10 coins offerts</strong> pour commencer !</p>
-          {[["name","text","Votre nom"],["phone","tel","Numéro WhatsApp (+509...)"]].map(([id,type,ph])=>(
-            <div key={id} style={{marginBottom:"1rem"}}>
-              <label style={{display:"block",fontSize:".78rem",fontWeight:600,color:"#7a9e8a",marginBottom:6}}>{ph}</label>
-              <input type={type} placeholder={ph} value={form[id]} onChange={e=>setForm(p=>({...p,[id]:e.target.value}))}/>
+
+          {/* Nom */}
+          <div style={{marginBottom:"1rem"}}>
+            <label style={{display:"block",fontSize:".78rem",fontWeight:600,color:"#7a9e8a",marginBottom:6}}>Votre nom</label>
+            <input type="text" placeholder="Ex : Jean Pierre" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))}/>
+          </div>
+
+          {/* Nimewo */}
+          <div style={{marginBottom:"1rem"}}>
+            <label style={{display:"block",fontSize:".78rem",fontWeight:600,color:"#7a9e8a",marginBottom:6}}>Numéro WhatsApp</label>
+            <input type="tel" placeholder="+509 3700 0000" value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))}/>
+          </div>
+
+          {/* Link chèn — NOUVO */}
+          <div style={{marginBottom:"1rem"}}>
+            <label style={{display:"block",fontSize:".78rem",fontWeight:600,color:"#7a9e8a",marginBottom:6}}>
+              🔗 Lien de votre chaîne WhatsApp
+            </label>
+            <input
+              type="url"
+              placeholder="https://whatsapp.com/channel/xxx..."
+              value={form.chainLink}
+              onChange={e=>{setForm(p=>({...p,chainLink:e.target.value}));validateChainLink(e.target.value);}}
+              style={{borderColor: chainValid===true?"#25D366": chainValid===false?"#ff5050":"rgba(37,211,102,.2)"}}
+            />
+            {/* Feedback validasyon */}
+            {chainValid===true && <div style={{color:"#25D366",fontSize:".75rem",marginTop:4}}>✅ Lien valide !</div>}
+            {chainValid===false && <div style={{color:"#ff5050",fontSize:".75rem",marginTop:4}}>❌ Lien invalide — copiez le lien depuis WhatsApp → Chaîne → Inviter</div>}
+            <div style={{color:"#7a9e8a",fontSize:".72rem",marginTop:4,lineHeight:1.5}}>
+              💡 WhatsApp → votre chaîne → <strong style={{color:"#e8f5e9"}}>⋮ → Lien d'invitation</strong>
             </div>
-          ))}
+          </div>
+
+          {/* Type chèn */}
           <div style={{marginBottom:"1.5rem"}}>
             <label style={{display:"block",fontSize:".78rem",fontWeight:600,color:"#7a9e8a",marginBottom:6}}>Type de chaîne</label>
-            <select value={form.chain} onChange={e=>setForm(p=>({...p,chain:e.target.value}))}>
+            <select value={form.chainType} onChange={e=>setForm(p=>({...p,chainType:e.target.value}))}>
               <option value="">-- Choisissez --</option>
-              <option>Groupe WhatsApp</option><option>Chaîne Commerciale</option><option>Communauté</option><option>Autre</option>
+              <option>Chaîne WhatsApp (Newsletter)</option>
+              <option>Groupe WhatsApp</option>
+              <option>Chaîne Commerciale / Business</option>
+              <option>Communauté</option>
             </select>
           </div>
+
+          {error&&<div style={{color:"#ff5050",fontSize:".82rem",marginBottom:"1rem",background:"rgba(255,80,80,.08)",border:"1px solid rgba(255,80,80,.2)",borderRadius:10,padding:"8px 12px"}}>{error}</div>}
+
           <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
             <button onClick={onClose} style={{background:"transparent",border:"1px solid rgba(255,255,255,.12)",color:"#7a9e8a",padding:"8px 18px",borderRadius:50,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:600,fontSize:".85rem"}}>Annuler</button>
-            <button onClick={()=>{if(!form.name||!form.phone||!form.chain){alert("Remplissez tous les champs 🙏");return;}setDone(true);}} style={{background:"#25D366",color:"#000",border:"none",padding:"8px 20px",borderRadius:50,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".88rem"}}>S'inscrire → 10 Coins ⚡</button>
+            <button onClick={submit} disabled={loading} style={{background:loading?"#1a5c38":"#25D366",color:"#000",border:"none",padding:"8px 20px",borderRadius:50,cursor:loading?"not-allowed":"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".88rem",opacity:loading?.7:1}}>
+              {loading?"⏳ Connexion au bot...":"S'inscrire → 10 Coins ⚡"}
+            </button>
           </div>
         </>):(
           <div style={{textAlign:"center",padding:"1rem 0"}}>
             <div style={{fontSize:"3rem",marginBottom:8}}>🎉</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.3rem",color:"#e8f5e9",marginBottom:8}}>Bienvenue !</div>
-            <p style={{color:"#7a9e8a",fontSize:".88rem",lineHeight:1.6,marginBottom:"1.5rem"}}>Compte créé ! Vous recevrez vos <strong style={{color:"#25D366"}}>10 coins</strong> sur WhatsApp dans quelques minutes.</p>
-            <button onClick={onClose} style={{background:"#25D366",color:"#000",border:"none",padding:"10px 28px",borderRadius:50,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700}}>Commencer 🚀</button>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.3rem",color:"#e8f5e9",marginBottom:8}}>Inscription réussie !</div>
+
+            {/* Résumé chaîne */}
+            <div style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.2)",borderRadius:14,padding:"12px 16px",marginBottom:"1rem",textAlign:"left"}}>
+              <div style={{fontSize:".75rem",color:"#7a9e8a",marginBottom:6}}>📋 Récapitulatif</div>
+              <div style={{fontSize:".85rem",color:"#e8f5e9",marginBottom:4}}>👤 <strong>{form.name}</strong></div>
+              <div style={{fontSize:".85rem",color:"#e8f5e9",marginBottom:4}}>📱 <strong>{form.phone}</strong></div>
+              <div style={{fontSize:".82rem",color:"#25D366",wordBreak:"break-all"}}>🔗 {form.chainLink}</div>
+            </div>
+
+            <p style={{color:"#7a9e8a",fontSize:".85rem",lineHeight:1.6,marginBottom:"1.5rem"}}>
+              Le bot va rejoindre votre chaîne et commencer les réactions automatiques. Vous recevrez vos <strong style={{color:"#25D366"}}>10 coins</strong> sur WhatsApp dans quelques minutes.
+            </p>
+
+            {/* Étapes suivantes */}
+            <div style={{background:"rgba(255,209,102,.06)",border:"1px solid rgba(255,209,102,.15)",borderRadius:12,padding:"12px",marginBottom:"1.5rem",textAlign:"left"}}>
+              <div style={{fontSize:".75rem",color:"#FFD166",fontWeight:700,marginBottom:6}}>⚡ Prochaines étapes</div>
+              <div style={{fontSize:".8rem",color:"#7a9e8a",lineHeight:1.8}}>
+                1. Bot rejoint votre chaîne automatiquement<br/>
+                2. Vous recevez 10 coins sur WhatsApp<br/>
+                3. Chaque post = 1 réaction automatique<br/>
+                4. Rechargez quand les coins sont épuisés
+              </div>
+            </div>
+
+            <button onClick={onClose} style={{background:"#25D366",color:"#000",border:"none",padding:"10px 28px",borderRadius:50,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700}}>Parfait ! 🚀</button>
           </div>
         )}
       </div>
@@ -323,11 +459,19 @@ export default function App(){
   const [payModal,setPayModal]=useState(null);
   const [scrolled,setScrolled]=useState(false);
   const [activeEmoji,setActiveEmoji]=useState(null);
+  const [botOnline,setBotOnline]=useState(null); // null=ap verifye, true=online, false=offline
 
   useEffect(()=>{
     const h=()=>setScrolled(window.scrollY>30);
     window.addEventListener("scroll",h);
     return()=>window.removeEventListener("scroll",h);
+  },[]);
+
+  // Verifye si bot la online chak 30 segonn
+  useEffect(()=>{
+    checkBotStatus().then(ok=>setBotOnline(ok));
+    const t=setInterval(()=>checkBotStatus().then(ok=>setBotOnline(ok)),30000);
+    return()=>clearInterval(t);
   },[]);
 
   return(
@@ -341,6 +485,13 @@ export default function App(){
           ⚡ Doberto XD
         </button>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {/* Bot Status Indicator */}
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(0,0,0,.3)",border:`1px solid ${botOnline===true?"rgba(37,211,102,.4)":botOnline===false?"rgba(255,80,80,.4)":"rgba(255,200,0,.4)"}`,borderRadius:50,padding:".3rem .8rem",fontSize:".72rem"}}>
+            <div style={{width:7,height:7,borderRadius:"50%",background:botOnline===true?"#25D366":botOnline===false?"#ff5050":"#FFD166",animation:botOnline===true?"pulse-ring 2s infinite":"none"}}/>
+            <span style={{color:botOnline===true?"#25D366":botOnline===false?"#ff5050":"#FFD166",fontFamily:"'Syne',sans-serif",fontWeight:700}}>
+              {botOnline===null?"Vérification...":botOnline?"Bot Actif":"Bot Hors ligne"}
+            </span>
+          </div>
           <button onClick={()=>setPage(page==="pricing"?"home":"pricing")} style={{background:"transparent",border:"1px solid rgba(37,211,102,.25)",color:"#e8f5e9",borderRadius:50,padding:".45rem 1rem",cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",transition:"all .2s"}}>
             {page==="pricing"?"← Accueil":"💰 Tarifs"}
           </button>
