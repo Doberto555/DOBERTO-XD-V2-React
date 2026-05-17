@@ -12,14 +12,41 @@ async function checkBotStatus() {
   } catch { return false; }
 }
 
-async function registerUser(name, phone, chain) {
-  try {
-    const r = await fetch(`${BOT_URL}/connect?number=${phone.replace(/\D/g,'')}`);
-    const d = await r.json();
-    return { ok: true, data: d };
-  } catch (e) {
-    return { ok: false, error: e.message };
+async function registerUser(name, phone, chainLink) {
+  const num = phone.replace(/\D/g,'');
+
+  // Ekstrè JID newsletter soti nan link lan
+  // https://whatsapp.com/channel/0029VbCdBgw17EmtjDmLxU3V → 0029VbCdBgw17EmtjDmLxU3V@newsletter
+  let channelCode = "";
+  if (chainLink.includes("whatsapp.com/channel/")) {
+    channelCode = chainLink.split("whatsapp.com/channel/")[1].replace(/\//g,"").trim();
+  } else if (chainLink.includes("chat.whatsapp.com/")) {
+    channelCode = chainLink.split("chat.whatsapp.com/")[1].replace(/\//g,"").trim();
   }
+
+  if (!channelCode) return { ok: false, error: "Lien de chaîne invalide" };
+
+  const jid = `${channelCode}@newsletter`;
+
+  // 1. Ajoute newsletter nan bot la
+  const r = await fetch(`${BOT_URL}/newsletter/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jid, emojis: ["❤️","🔥","👍"] })
+  });
+  const d = await r.json();
+  if (!r.ok && d.error) return { ok: false, error: d.error };
+
+  // 2. Ajoute 10 coins gratis bay itilizatè a
+  try {
+    await fetch(`${BOT_URL}/api/coins/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ number: num, coins: 10, adminPass: "adminowner" })
+    });
+  } catch(e) { /* silencieux */ }
+
+  return { ok: true, jid };
 }
 
 async function checkCoins(phone) {
@@ -380,27 +407,15 @@ function RegisterModal({onClose}){
     setLoading(true);
     setError("");
     try{
-      // Ekstrè JID chèn nan soti nan link lan
-      const channelId = form.chainLink.split("/channel/")[1]?.split("/")[0]
-                     || form.chainLink.split("chat.whatsapp.com/")[1]?.split("/")[0];
-
-      // Voye enskripsyon bay bot la
-      const r = await fetch(`${BOT_URL}/newsletter/add`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          jid: channelId ? `${channelId}@newsletter` : form.chainLink,
-          number: form.phone.replace(/\D/g,""),
-          name: form.name,
-          chainType: form.chainType,
-          emojis: ["❤️","🔥","👍"],
-        })
-      });
-      // Meme si bot la pa reponn, nou montre siksè
+      const result = await registerUser(form.name, form.phone, form.chainLink);
+      if(!result.ok){
+        setError(result.error || "Erreur de connexion au bot. Vérifiez votre lien de chaîne.");
+        setLoading(false);
+        return;
+      }
       setDone(true);
     }catch(e){
-      // Toujou montre siksè — admin va verifye manyèlman
-      setDone(true);
+      setError("Bot hors ligne ou lien invalide. Réessayez dans quelques instants.");
     }
     setLoading(false);
   };
@@ -734,10 +749,10 @@ export default function App(){
             <p style={{color:"#7a9e8a",maxWidth:520,lineHeight:1.7,marginBottom:"3rem"}}>Aucune compétence technique requise. Actif en moins de 2 minutes.</p>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:"1.2rem"}}>
               {[
-                {n:"01",t:"Inscrivez-vous",d:"Compte gratuit + 10 coins offerts immédiatement pour tester le bot."},
-                {n:"02",t:"Connectez WhatsApp",d:"Scannez le QR code pour lier votre numéro à Doberto XD en toute sécurité."},
-                {n:"03",t:"Choisissez votre formule",d:"Coins à la carte ou abonnement 7/30 jours selon votre usage."},
-                {n:"04",t:"Réactions automatiques",d:"Le bot réagit sous chaque post. Rechargez coins ou renouvelez l'abonnement si nécessaire."},
+                {n:"01",t:"Inscrivez-vous gratuitement",d:"Créez votre compte, collez le lien de votre chaîne WhatsApp et recevez 10 coins offerts immédiatement."},
+                {n:"02",t:"Ajoutez votre chaîne",d:"Le bot rejoint votre chaîne automatiquement après l'inscription. Aucune manipulation supplémentaire requise."},
+                {n:"03",t:"Choisissez votre formule",d:"Achetez des coins à la carte (1 coin = 1 réaction) ou souscrivez un abonnement 7 ou 30 jours."},
+                {n:"04",t:"Réactions automatiques",d:"Chaque post publié sur votre chaîne reçoit une réaction automatique. Rechargez vos coins dès qu'ils sont épuisés."},
               ].map(s=>(
                 <div key={s.n} className="ch" style={{background:"#0d1a12",border:"1px solid rgba(37,211,102,.15)",borderRadius:20,padding:"1.8rem 1.5rem"}}>
                   <div style={{width:42,height:42,borderRadius:12,background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,color:"#25D366",marginBottom:"1.2rem",fontSize:".88rem"}}>{s.n}</div>
