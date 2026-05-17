@@ -1,1 +1,7 @@
-# DOBERTO-XD-V2-React
+doberto-xd-site/
+├── index.html
+├── package.json
+├── vite.config.js
+└── src/
+    ├── main.jsx
+    └── App.jsx
